@@ -1,0 +1,1 @@
+// Dashboard component\n\nimport React from 'react';\n\nconst Dashboard = () => {\n  return (\n    <div className="p-4">\n      <h1 className="text-2xl font-bold">Dashboard</h1>\n      {/* Add dashboard content here */}\n    </div>\n  );\n};\n\nexport default Dashboard;
