@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const UserInfo = () => {
     const [name, setName] = useState("");
@@ -8,14 +9,47 @@ const UserInfo = () => {
     const [incomeRange, setIncomeRange] = useState("2-5 LPA");
     const [investmentGoal, setInvestmentGoal] = useState("financial-growth");
     const [investmentExperience, setInvestmentExperience] = useState("beginner");
+    const [error, setError] = useState("");
 
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log({ name, riskTolerance, investmentStyle, incomeRange, investmentGoal, investmentExperience });
-        alert("Profile information saved!");
-        navigate('/home'); // Navigate to HomePage after submission
+        setError("");
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setError("Please login first");
+                navigate("/login");
+                return;
+            }
+
+            const response = await axios.post(
+                "http://localhost:8001/api/profiles/",
+                {
+                    full_name: name,
+                    risk_tolerance: parseInt(riskTolerance),
+                    investment_style: investmentStyle,
+                    income_range: incomeRange,
+                    investment_goal: investmentGoal,
+                    investment_experience: investmentExperience
+                },
+                {
+                    headers: {
+                        Authorization: `Token ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (response.status === 201) {
+                alert("Profile information saved successfully!");
+                navigate('/home');
+            }
+        } catch (err) {
+            setError(err.response?.data?.detail || "An error occurred while saving your profile");
+        }
     };
 
     return (
