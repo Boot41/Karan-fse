@@ -1,95 +1,97 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ProfilePage = () => {
-  const [userInfo, setUserInfo] = useState(null);
+    const navigate = useNavigate();
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  useEffect(() => {
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
     const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("access_token"); // JWT token from login
-        const res = await axios.get("http://127.0.0.1:8000/api/profile/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUserInfo(res.data[0]); // API returns a list, so we use the first item
-      } catch (err) {
-        console.error("Error fetching profile", err);
-      }
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:8001/api/profiles/me/', {
+                headers: {
+                    'Authorization': `Token ${token}`
+                }
+            });
+            setProfile(response.data);
+            localStorage.setItem('userProfile', JSON.stringify(response.data));
+        } catch (err) {
+            setError('Failed to load profile');
+            console.error('Profile fetch error:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    fetchProfile();
-  }, []);
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/');
+    };
 
-  return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-black text-white overflow-hidden p-4">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-gray-900 to-black opacity-80 animate-gradientMove"></div>
+    if (loading) {
+        return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
+    }
 
-      {/* Navbar */}
-      <nav className="absolute top-0 left-0 w-full flex flex-wrap justify-between items-center p-4 bg-gray-900 bg-opacity-80 shadow-lg backdrop-blur-md">
-        <div className="text-xl sm:text-2xl font-extrabold text-orange-400 tracking-wide">
-          AI Investment Advisor
+    return (
+        <div className="min-h-screen bg-black text-white">
+            <nav className="bg-gray-900 p-4">
+                <div className="container mx-auto flex justify-between items-center">
+                    <h1 className="text-2xl font-bold text-purple-500">AI Investment Platform</h1>
+                    <div className="flex space-x-4">
+                        <button onClick={() => navigate('/home')} className="text-white hover:text-purple-400">Home</button>
+                        <button onClick={() => navigate('/profile')} className="text-white hover:text-purple-400">Profile</button>
+                        <button onClick={() => navigate('/about')} className="text-white hover:text-purple-400">About</button>
+                        <button onClick={handleLogout} className="text-red-400 hover:text-red-300">Logout</button>
+                    </div>
+                </div>
+            </nav>
+
+            <div className="container mx-auto px-4 py-8">
+                <div className="max-w-2xl mx-auto bg-gray-900 rounded-xl shadow-lg p-8">
+                    <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+                        Your Profile
+                    </h2>
+
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded text-red-500">
+                            {error}
+                        </div>
+                    )}
+
+                    {profile && (
+                        <div className="space-y-6">
+                            <div className="border-b border-gray-700 pb-4">
+                                <h3 className="text-xl font-semibold mb-2 text-purple-400">Personal Information</h3>
+                                <p><span className="text-gray-400">Email:</span> {user.email}</p>
+                                <p><span className="text-gray-400">Full Name:</span> {profile.full_name}</p>
+                            </div>
+
+                            <div className="border-b border-gray-700 pb-4">
+                                <h3 className="text-xl font-semibold mb-2 text-purple-400">Investment Profile</h3>
+                                <p><span className="text-gray-400">Risk Tolerance:</span> {profile.risk_tolerance}/10</p>
+                                <p><span className="text-gray-400">Investment Style:</span> {profile.investment_style}</p>
+                                <p><span className="text-gray-400">Income Range:</span> {profile.income_range} LPA</p>
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-semibold mb-2 text-purple-400">Investment Details</h3>
+                                <p><span className="text-gray-400">Investment Goal:</span> {profile.investment_goal}</p>
+                                <p><span className="text-gray-400">Experience Level:</span> {profile.investment_experience}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
-        <button 
-          onClick={() => window.history.back()}  
-          className="px-4 sm:px-5 py-2 text-white bg-orange-500 hover:bg-orange-600 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105">
-          ⬅ Back
-        </button>
-      </nav>
-
-      {/* Profile Card */}
-      <div className="relative bg-gray-900 bg-opacity-60 p-6 sm:p-8 rounded-2xl shadow-2xl max-w-xs sm:max-w-lg w-full text-center border border-orange-500 backdrop-blur-md animate-fade-in mt-16 sm:mt-20">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-orange-500 mb-6">Your Profile</h1>
-
-        {userInfo ? (
-          <div className="text-sm sm:text-lg space-y-3 sm:space-y-4">
-            <p><strong className="text-orange-400">Name:</strong> {userInfo.name}</p>
-            <p><strong className="text-orange-400">Email:</strong> {userInfo.email}</p>
-            <p><strong className="text-orange-400">Investment Experience:</strong> {userInfo.investment_experience}</p>
-            <p><strong className="text-orange-400">Investment Goal:</strong> {userInfo.investment_goal}</p>
-            <p><strong className="text-orange-400">Income Range:</strong> {userInfo.income_range}</p>
-            <p><strong className="text-orange-400">Risk Tolerance:</strong> {userInfo.risk_tolerance}</p>
-          </div>
-        ) : (
-          <p className="text-sm sm:text-lg text-gray-300">No profile data found. Please fill in your details on the User Info page.</p>
-        )}
-      </div>
-
-      {/* Floating Animation Effect */}
-      <style>
-        {`
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0px); }
-          }
-          .animate-float {
-            animation: float 3s ease-in-out infinite;
-          }
-
-          @keyframes fade-in {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          .animate-fade-in {
-            animation: fade-in 0.5s ease-in-out;
-          }
-
-          @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-          .animate-gradientMove {
-            background-size: 200% 200%;
-            animation: gradientMove 8s ease infinite;
-          }
-        `}
-      </style>
-    </div>
-  );
+    );
 };
 
 export default ProfilePage;

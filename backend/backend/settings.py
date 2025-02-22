@@ -29,13 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Third party apps
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    
-    # Local apps
     'api',
 ]
 
@@ -119,7 +115,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite default development server
 ]
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development
 
 # REST Framework settings
 REST_FRAMEWORK = {

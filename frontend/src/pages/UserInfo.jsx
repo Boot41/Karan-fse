@@ -1,197 +1,181 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const UserInfo = () => {
-    const [name, setName] = useState("");
-    const [riskTolerance, setRiskTolerance] = useState(5);
-    const [investmentStyle, setInvestmentStyle] = useState("short-term");
-    const [incomeRange, setIncomeRange] = useState("2-5 LPA");
-    const [investmentGoal, setInvestmentGoal] = useState("financial-growth");
-    const [investmentExperience, setInvestmentExperience] = useState("beginner");
-    const [error, setError] = useState("");
-
     const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [formData, setFormData] = useState({
+        full_name: '',
+        risk_tolerance: 5,
+        investment_style: 'Moderate',
+        income_range: '',
+        investment_goal: '',
+        investment_experience: 'Beginner'
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
+        setIsLoading(true);
+        setError('');
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem('token');
             if (!token) {
-                setError("Please login first");
-                navigate("/login");
+                navigate('/');
                 return;
             }
 
+            // First, create/update the profile
             const response = await axios.post(
-                "http://localhost:8001/api/profiles/",
-                {
-                    full_name: name,
-                    risk_tolerance: parseInt(riskTolerance),
-                    investment_style: investmentStyle,
-                    income_range: incomeRange,
-                    investment_goal: investmentGoal,
-                    investment_experience: investmentExperience
-                },
+                'http://localhost:8001/api/profiles/',
+                formData,
                 {
                     headers: {
-                        Authorization: `Token ${token}`,
-                        "Content-Type": "application/json",
-                    },
+                        'Authorization': `Token ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 }
             );
 
-            if (response.status === 201) {
-                alert("Profile information saved successfully!");
+            if (response.data) {
+                // Store the profile data in localStorage
+                localStorage.setItem('userProfile', JSON.stringify(response.data));
+                
+                // Navigate to home page
                 navigate('/home');
             }
         } catch (err) {
-            setError(err.response?.data?.detail || "An error occurred while saving your profile");
+            console.error('Profile creation error:', err);
+            setError(err.response?.data?.detail || 'Failed to create profile. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="relative flex flex-col items-center justify-center min-h-screen bg-black text-white overflow-hidden">
-            {/* Motion Background */}
-            <div className="absolute inset-0">
-                {/* Animated Waves */}
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-black via-gray-900 to-black animate-wave motion-reduce:animate-none opacity-70"></div>
+        <div className="min-h-screen bg-black text-white py-8 px-4">
+            <div className="max-w-2xl mx-auto">
+                <h1 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+                    Complete Your Profile
+                </h1>
 
-                {/* Floating Glowing Particles */}
-                <div className="absolute w-full h-full overflow-hidden">
-                    {[...Array(25)].map((_, i) => (
-                        <div
-                            key={i}
-                            className="absolute w-2 h-2 bg-orange-500 rounded-full opacity-80 animate-float"
-                            style={{
-                                top: `${Math.random() * 100}%`,
-                                left: `${Math.random() * 100}%`,
-                                animationDelay: `${Math.random() * 3}s`,
-                                animationDuration: `${3 + Math.random() * 4}s`,
-                            }}
-                        ></div>
-                    ))}
-                </div>
-            </div>
+                {error && (
+                    <div className="mb-6 p-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg text-red-500">
+                        {error}
+                    </div>
+                )}
 
-            <div className="relative z-10 w-full max-w-md px-6">
-                <h2 className="text-4xl sm:text-5xl font-extrabold text-orange-500 mb-8 text-center animate-fadeIn">
-                    Let’s Get Started 🚀
-                </h2>
-
-                <form
-                    onSubmit={handleSubmit}
-                    className="bg-gray-900 p-8 rounded-2xl shadow-lg backdrop-blur-md bg-opacity-80 transition-all duration-300 hover:shadow-orange-500/50"
-                >
-                    {/* Full Name */}
-                    <div className="mb-6">
-                        <label className="block text-lg font-semibold mb-2 text-orange-400">
-                            Full Name
-                        </label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label className="block mb-2">Full Name</label>
                         <input
                             type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full p-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-400 transition-transform transform hover:scale-105"
+                            name="full_name"
+                            value={formData.full_name}
+                            onChange={handleChange}
                             required
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
                         />
                     </div>
 
-                    {/* Risk Tolerance */}
-                    <div className="mb-6">
-                        <label className="block text-lg font-semibold mb-2 text-orange-400">
-                            Risk Tolerance
-                        </label>
+                    <div>
+                        <label className="block mb-2">Risk Tolerance (1-10)</label>
                         <input
-                            type="range"
+                            type="number"
+                            name="risk_tolerance"
                             min="1"
                             max="10"
-                            value={riskTolerance}
-                            onChange={(e) => setRiskTolerance(e.target.value)}
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer transition-all hover:scale-105"
+                            value={formData.risk_tolerance}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
                         />
-                        <div className="flex justify-between text-sm mt-1">
-                            <span>Low Risk</span>
-                            <span className="text-orange-400 font-bold">Value: {riskTolerance}</span>
-                            <span>High Risk</span>
-                        </div>
                     </div>
 
-                    {/* Investment Style */}
-                    <div className="mb-6">
-                        <label className="block text-lg font-semibold mb-2 text-orange-400">
-                            Investment Style
-                        </label>
+                    <div>
+                        <label className="block mb-2">Investment Style</label>
                         <select
-                            value={investmentStyle}
-                            onChange={(e) => setInvestmentStyle(e.target.value)}
-                            className="w-full p-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 hover:scale-105 transition"
+                            name="investment_style"
+                            value={formData.investment_style}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
                         >
-                            <option value="short-term">Short Term</option>
-                            <option value="medium-term">Medium Term</option>
-                            <option value="long-term">Long Term</option>
+                            <option value="Conservative">Conservative</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Aggressive">Aggressive</option>
                         </select>
                     </div>
 
-                    {/* Income Range (Adjusted for INR) */}
-                    <div className="mb-6">
-                        <label className="block text-lg font-semibold mb-2 text-orange-400">
-                            Income Range (INR)
-                        </label>
+                    <div>
+                        <label className="block mb-2">Income Range</label>
                         <select
-                            value={incomeRange}
-                            onChange={(e) => setIncomeRange(e.target.value)}
-                            className="w-full p-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 hover:scale-105 transition"
+                            name="income_range"
+                            value={formData.income_range}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
                         >
-                            <option value="Less than 2 LPA">Less than ₹2 LPA</option>
-                            <option value="2-5 LPA">₹2 - ₹5 LPA</option>
-                            <option value="5-10 LPA">₹5 - ₹10 LPA</option>
-                            <option value="10-20 LPA">₹10 - ₹20 LPA</option>
-                            <option value="More than 20 LPA">More than ₹20 LPA</option>
+                            <option value="">Select Income Range</option>
+                            <option value="0-5">0-5 LPA</option>
+                            <option value="5-10">5-10 LPA</option>
+                            <option value="10-20">10-20 LPA</option>
+                            <option value="20+">20+ LPA</option>
                         </select>
                     </div>
 
-                    {/* Investment Goal */}
-                    <div className="mb-6">
-                        <label className="block text-lg font-semibold mb-2 text-orange-400">
-                            Investment Goal
-                        </label>
+                    <div>
+                        <label className="block mb-2">Investment Goal</label>
                         <select
-                            value={investmentGoal}
-                            onChange={(e) => setInvestmentGoal(e.target.value)}
-                            className="w-full p-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 hover:scale-105 transition"
+                            name="investment_goal"
+                            value={formData.investment_goal}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
                         >
-                            <option value="financial-growth">Financial Growth</option>
-                            <option value="education">Education</option>
-                            <option value="retirement">Retirement</option>
-                            <option value="real-estate">Real Estate</option>
+                            <option value="">Select Investment Goal</option>
+                            <option value="Retirement">Retirement</option>
+                            <option value="Wealth Building">Wealth Building</option>
+                            <option value="Short Term">Short Term Gains</option>
+                            <option value="Regular Income">Regular Income</option>
                         </select>
                     </div>
 
-                    {/* Investment Experience */}
-                    <div className="mb-6">
-                        <label className="block text-lg font-semibold mb-2 text-orange-400">
-                            Investment Experience
-                        </label>
+                    <div>
+                        <label className="block mb-2">Investment Experience</label>
                         <select
-                            value={investmentExperience}
-                            onChange={(e) => setInvestmentExperience(e.target.value)}
-                            className="w-full p-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 hover:scale-105 transition"
+                            name="investment_experience"
+                            value={formData.investment_experience}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
                         >
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Expert">Expert</option>
                         </select>
                     </div>
 
-                    {/* Submit Button */}
                     <button
                         type="submit"
-                        className="w-full bg-orange-500 hover:bg-orange-600 font-bold p-3 text-black rounded-lg font-semibold transition duration-300 shadow-md transform hover:scale-110"
+                        disabled={isLoading}
+                        className={`w-full py-3 rounded-lg font-semibold ${
+                            isLoading
+                                ? 'bg-gray-600 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                        }`}
                     >
-                        Start Your Investment Journey 💸
+                        {isLoading ? 'Creating Profile...' : 'Complete Profile'}
                     </button>
                 </form>
             </div>
