@@ -1,77 +1,96 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.contrib.postgres.fields import ArrayField
-from decimal import Decimal
 
 class UserProfile(models.Model):
-    RISK_CHOICES = [
-        ('LOW', 'Low Risk'),
-        ('MODERATE', 'Moderate Risk'),
-        ('HIGH', 'High Risk')
+    """
+    Stores additional user details for investment advisory.
+    This data is collected after successful registration.
+    """
+    
+    INVESTMENT_TYPE_CHOICES = [
+        ('SHORT_TERM', 'Short Term'),
+        ('MID_TERM', 'Mid Term'),
+        ('LONG_TERM', 'Long Term')
     ]
     
-    EXPERIENCE_CHOICES = [
+    INVESTMENT_REASON_CHOICES = [
+        ('WEALTH_GROWTH', 'Wealth Growth'),
+        ('EDUCATION', 'Education'),
+        ('RETIREMENT', 'Retirement'),
+        ('ESTATE', 'Estate Planning')
+    ]
+    
+    INCOME_RANGE_CHOICES = [
+        ('UNDER_2_LPA', 'Under 2 LPA'),
+        ('2_TO_5_LPA', '2-5 LPA'),
+        ('5_TO_10_LPA', '5-10 LPA'),
+        ('10_TO_20_LPA', '10-20 LPA'),
+        ('20_LPA_PLUS', '20 LPA+')
+    ]
+    
+    EXPERIENCE_LEVEL_CHOICES = [
         ('BEGINNER', 'Beginner'),
         ('INTERMEDIATE', 'Intermediate'),
-        ('EXPERT', 'Expert')
+        ('ADVANCED', 'Advanced')
     ]
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    risk_tolerance = models.CharField(max_length=10, choices=RISK_CHOICES, default='MODERATE')
-    investment_style = models.CharField(max_length=100, default='Growth')
-    experience_level = models.CharField(max_length=15, choices=EXPERIENCE_CHOICES, default='BEGINNER')
-    investment_horizon = models.IntegerField(default=5)  # in years
-    preferred_sectors = models.JSONField(default=list)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['risk_tolerance', 'investment_style']),
-            models.Index(fields=['experience_level', 'investment_horizon'])
-        ]
+    RISK_TOLERANCE_CHOICES = [
+        ('LOW', 'Low'),
+        ('MEDIUM', 'Medium'),
+        ('HIGH', 'High'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # Links to the main User model
+    name = models.CharField(max_length=100)  # User's display name/profile name
+    risk_tolerance = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)], default=5)  # Integer range from 0-10 with default 5
+    investment_type = models.CharField(max_length=15, choices=INVESTMENT_TYPE_CHOICES, default='LONG_TERM')
+    investment_reason = models.CharField(max_length=20, choices=INVESTMENT_REASON_CHOICES, default='WEALTH_GROWTH')
+    income_range = models.CharField(max_length=20, choices=INCOME_RANGE_CHOICES, default='UNDER_2_LPA')  # Default set here
+    investment_experience = models.CharField(max_length=15, choices=EXPERIENCE_LEVEL_CHOICES, default='BEGINNER')  # Default set to BEGINNER
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for profile creation
+    updated_at = models.DateTimeField(auto_now=True)  # Timestamp for profile updates
 
     def __str__(self):
-        return f"{self.user.email}'s Profile"
+        return f"{self.user.username}'s Profile"
+
 
 class Portfolio(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='portfolios')
-    stock_symbol = models.CharField(max_length=10, db_index=True)
-    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity = models.IntegerField()
-    purchase_date = models.DateTimeField(auto_now_add=True)
-    last_updated = models.DateTimeField(auto_now=True)
-    total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    notes = models.TextField(blank=True)
+    """
+    Stores a user's stock portfolio details.
+    This includes the stocks they have purchased, their quantity, and purchase details.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='portfolios')  # Linking to the User model
+    stock_symbol = models.CharField(max_length=10, db_index=True)  # Ticker symbol (e.g., AAPL, TSLA)
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)  # Price per share at purchase
+    quantity = models.IntegerField()  # Number of shares bought
+    purchase_date = models.DateTimeField(auto_now_add=True)  # Date when the stock was purchased
+    last_updated = models.DateTimeField(auto_now=True)  # Last modified timestamp
+    total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Current value of holdings
+    notes = models.TextField(blank=True)  # Optional notes on the investment
 
     class Meta:
-        unique_together = ['user', 'stock_symbol']
+        unique_together = ['user', 'stock_symbol']  # Ensures a user can't have duplicate stock entries
         indexes = [
             models.Index(fields=['user', 'stock_symbol']),
             models.Index(fields=['stock_symbol', '-purchase_date'])
         ]
 
     def __str__(self):
-        return f"{self.user.email}'s {self.stock_symbol} holdings"
+        return f"{self.user.username}'s {self.stock_symbol} holdings"
+
 
 class MarketData(models.Model):
-    symbol = models.CharField(max_length=10, unique=True, default='UNKNOWN', db_index=True)
-    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
-    current_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    daily_change = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    volume = models.BigIntegerField(default=0)
-    high_52_week = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    low_52_week = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    last_updated = models.DateTimeField(auto_now=True)
-    sentiment_score = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)  # -1 to 1
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['-timestamp']),
-            models.Index(fields=['symbol', '-timestamp']),
-        ]
-        get_latest_by = 'timestamp'
+    """
+    Stores real-time market data.
+    This data includes stock prices, daily changes, and sentiment analysis.
+    """
+    symbol = models.CharField(max_length=10, db_index=True)  # Stock symbol (e.g., AAPL)
+    current_price = models.DecimalField(max_digits=10, decimal_places=2)  # Current stock price
+    daily_change = models.DecimalField(max_digits=10, decimal_places=2)  # Daily price change
+    volume = models.BigIntegerField()  # Stock volume for the day
+    sentiment_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Sentiment score
+    timestamp = models.DateTimeField(auto_now_add=True)  # Time when the market data was collected
 
     def __str__(self):
-        return f"{self.symbol} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+        return f"Market Data for {self.symbol} at {self.timestamp}"

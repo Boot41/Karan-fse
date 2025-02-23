@@ -93,7 +93,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'email', 'username')
 
-# 🎯 User Profile Serializer
+# 🎯 Updated User Profile Serializer
 class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
 
@@ -102,12 +102,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'email',
-            'full_name',
+            'name',
             'risk_tolerance',
-            'investment_style',
+            'investment_type',
+            'investment_reason',
+            'income_range',
             'investment_experience',
-            'investment_horizon',
-            'preferred_sectors',
             'created_at',
             'updated_at'
         )
@@ -163,9 +163,6 @@ class MarketDataSerializer(serializers.ModelSerializer):
             'volume',
             'high_52_week',
             'low_52_week',
-            'market_sentiment',
-            'portfolio_diversification',
-            'sentiment_score',
-            'volatility_index'
+            'sentiment_score'
         )
         read_only_fields = ('id', 'timestamp')

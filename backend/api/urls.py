@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .views import (
     register_user, login_user, forgot_password,
-    LogoutView, UserProfileViewSet, PortfolioViewSet, MarketDataViewSet
+    LogoutView, UserProfileView, UserProfileViewSet, PortfolioViewSet, MarketDataViewSet
 )
 
 # DRF Router for ViewSets
@@ -19,10 +19,13 @@ urlpatterns = [
     # ✅ Authentication endpoints
     path('auth/register/', register_user, name='register'),
     path('auth/login/', login_user, name='login'),
-    path('auth/logout/', LogoutView.as_view(), name='logout'),  # ✅ Fixed logout path
+    path('auth/logout/', LogoutView.as_view(), name='logout'),  
     path('auth/forgot-password/', forgot_password, name='forgot_password'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+
+    # ✅ User Profile endpoint
+    path('profile/', UserProfileView.as_view(), name='get-profile'),
 
     # ✅ Portfolio summary endpoint (Ensure `summary` is defined in PortfolioViewSet)
     path('portfolio/summary/', PortfolioViewSet.as_view({'get': 'summary'}), name='portfolio-summary'),

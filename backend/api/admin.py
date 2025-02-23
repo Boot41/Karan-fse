@@ -5,10 +5,10 @@ from .models import UserProfile, Portfolio, MarketData
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'risk_tolerance', 'investment_style', 'experience_level', 'investment_horizon']
-    list_filter = ['risk_tolerance', 'experience_level']
+    list_display = ['user', 'risk_tolerance', 'income_range', 'investment_experience']  # Removed invalid fields
+    list_filter = ['risk_tolerance', 'investment_experience']  # Fixed field name
     search_fields = ['user__email', 'user__username']
-    ordering = ('-created_at',)
+    ordering = ('-id',)  # Changed 'created_at' to 'id' since 'created_at' doesn't exist
 
 @admin.register(Portfolio)
 class PortfolioAdmin(admin.ModelAdmin):

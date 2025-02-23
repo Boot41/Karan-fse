@@ -1,11 +1,13 @@
+
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, generics, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
+from .models import UserProfile, Portfolio, MarketData
 from .serializers import (
     RegisterSerializer, 
     LoginSerializer, 
@@ -15,7 +17,6 @@ from .serializers import (
     MarketDataSerializer,
     LogoutSerializer
 )
-from .models import UserProfile, Portfolio, MarketData
 
 # ✅ User Registration API
 @api_view(['POST'])
@@ -113,3 +114,14 @@ class LogoutView(APIView):
             except Exception as e:
                 return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ✅ User Profile View
+class UserProfileView(generics.RetrieveAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(user_profile)
+        return Response(serializer.data)
