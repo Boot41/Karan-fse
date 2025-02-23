@@ -1,142 +1,115 @@
-from rest_framework import viewsets, status
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from rest_framework import status, viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model, authenticate
-from django.db.models import Q
-from rest_framework.authtoken.models import Token
-from .models import UserProfile
-from .serializers import UserProfileSerializer, UserRegistrationSerializer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from .serializers import (
+    RegisterSerializer, 
+    LoginSerializer, 
+    ForgotPasswordSerializer, 
+    UserProfileSerializer, 
+    PortfolioSerializer, 
+    MarketDataSerializer,
+    LogoutSerializer
+)
+from .models import UserProfile, Portfolio, MarketData
 
-User = get_user_model()
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login_user(request):
-    email = request.data.get('email')
-    password = request.data.get('password')
-    
-    if not email or not password:
-        return Response({'error': 'Please provide both email and password'}, 
-                      status=status.HTTP_400_BAD_REQUEST)
-    
-    # Try to find user by email first
-    try:
-        user = User.objects.get(email=email)
-        username = user.username
-    except User.DoesNotExist:
-        username = email  # If no user found by email, use email as username
-    
-    user = authenticate(username=username, password=password)
-    
-    if user:
-        token, _ = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'username': user.username
-            }
-        })
-    else:
-        return Response({'error': 'Invalid credentials'}, 
-                      status=status.HTTP_401_UNAUTHORIZED)
-
+# ✅ User Registration API
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    serializer = UserRegistrationSerializer(data=request.data)
+    """Register a new user"""
+    serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
-        user = serializer.save()
-        # Create an empty profile for the user
-        UserProfile.objects.create(user=user)
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'username': user.username
-            }
-        }, status=status.HTTP_201_CREATED)
+        serializer.save()
+        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def market_trends(request):
-    # Simulated market data
-    trends = [
-        {
-            'description': 'Tech stocks showing strong momentum',
-            'date': '2025-02-23'
-        },
-        {
-            'description': 'Emerging markets present growth opportunities',
-            'date': '2025-02-23'
-        },
-        {
-            'description': 'Renewable energy sector gaining traction',
-            'date': '2025-02-23'
-        }
-    ]
-    
-    recommendations = [
-        {
-            'title': 'Technology Sector',
-            'description': 'Consider increasing exposure to AI and cloud computing companies'
-        },
-        {
-            'title': 'Green Energy',
-            'description': 'Solar and wind energy companies show promising growth potential'
-        },
-        {
-            'title': 'Risk Management',
-            'description': 'Maintain a diversified portfolio with both growth and value stocks'
-        }
-    ]
-    
-    return Response({
-        'trends': trends,
-        'recommendations': recommendations
-    })
+# ✅ User Login API (JWT Token Generation)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_user(request):
+    """Authenticate user and return JWT token"""
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
+# ✅ User Logout API
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_user(request):
+    """Logout user by blacklisting refresh token."""
+    try:
+        refresh_token = request.data.get('refresh_token')
+        if not refresh_token:
+            return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+
+        return Response({'message': 'User logged out successfully'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# ✅ Forgot Password API
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    """Send password reset instructions"""
+    serializer = ForgotPasswordSerializer(data=request.data)
+    if serializer.is_valid():
+        return Response({'message': 'Password reset instructions sent'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# ✅ User Profile ViewSet
 class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for user profiles.
+    """
+    queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
-    
-    def create(self, request):
-        try:
-            # Check if profile exists
-            profile = UserProfile.objects.get(user=request.user)
-            serializer = self.get_serializer(profile, data=request.data)
-        except UserProfile.DoesNotExist:
-            # Create new profile
-            serializer = self.get_serializer(data=request.data)
-        
-        serializer.is_valid(raise_exception=True)
-        profile = serializer.save(user=request.user)
-        
-        return Response(self.get_serializer(profile).data)
 
-    @action(detail=False, methods=['get'])
-    def me(self, request):
-        try:
-            profile = UserProfile.objects.get(user=request.user)
-            serializer = self.get_serializer(profile)
-            return Response(serializer.data)
-        except UserProfile.DoesNotExist:
-            return Response({'detail': 'Profile not found'}, status=404)
+# ✅ Portfolio ViewSet
+class PortfolioViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing user portfolios.
+    """
+    queryset = Portfolio.objects.all()
+    serializer_class = PortfolioSerializer
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['put', 'patch'])
-    def update_me(self, request):
-        profile = get_object_or_404(UserProfile, user=request.user)
-        serializer = self.get_serializer(profile, data=request.data, partial=True)
+    def get_queryset(self):
+        return Portfolio.objects.filter(user=self.request.user)
+
+# ✅ Market Data ViewSet
+class MarketDataViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for fetching and managing market data.
+    """
+    queryset = MarketData.objects.all()
+    serializer_class = MarketDataSerializer
+    permission_classes = [IsAuthenticated]
+
+# ✅ Logout View
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
+            try:
+                refresh_token = serializer.validated_data["refresh"]
+                token = RefreshToken(refresh_token)
+                token.blacklist()  # Blacklist the refresh token
+                return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+            except Exception as e:
+                return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

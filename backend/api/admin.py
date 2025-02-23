@@ -1,17 +1,24 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import User, UserProfile
+from .models import UserProfile, Portfolio, MarketData
 
 # Register your models here.
 
-@admin.register(User)
-class CustomUserAdmin(UserAdmin):
-    list_display = ('email', 'username', 'is_active', 'date_joined')
-    search_fields = ('email', 'username')
-    ordering = ('email',)
-
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'user', 'risk_tolerance', 'investment_style', 'investment_goal', 'investment_experience')
-    search_fields = ('full_name', 'user__email')
-    list_filter = ('investment_goal', 'investment_style', 'investment_experience')
+    list_display = ['user', 'risk_tolerance', 'investment_style', 'experience_level', 'investment_horizon']
+    list_filter = ['risk_tolerance', 'experience_level']
+    search_fields = ['user__email', 'user__username']
+    ordering = ('-created_at',)
+
+@admin.register(Portfolio)
+class PortfolioAdmin(admin.ModelAdmin):
+    list_display = ['user', 'stock_symbol', 'purchase_price', 'quantity', 'total_value', 'purchase_date']
+    list_filter = ['purchase_date']
+    search_fields = ['user__email', 'stock_symbol']
+
+@admin.register(MarketData)
+class MarketDataAdmin(admin.ModelAdmin):
+    list_display = ['symbol', 'current_price', 'daily_change', 'volume', 'sentiment_score']
+    list_filter = ['symbol']
+    search_fields = ['symbol']
+    ordering = ['-timestamp']
