@@ -48,6 +48,14 @@ class UserProfile(models.Model):
     investment_reason = models.CharField(max_length=20, choices=INVESTMENT_REASON_CHOICES, default='WEALTH_GROWTH')
     income_range = models.CharField(max_length=20, choices=INCOME_RANGE_CHOICES, default='UNDER_2_LPA')  # Default set here
     investment_experience = models.CharField(max_length=15, choices=EXPERIENCE_LEVEL_CHOICES, default='BEGINNER')  # Default set to BEGINNER
+    investment_style = models.CharField(max_length=50, choices=[
+        ('Conservative', 'Conservative'),
+        ('Balanced Growth', 'Balanced Growth'),
+        ('Aggressive Growth', 'Aggressive Growth'),
+    ], default='Conservative')
+    experience_level = models.CharField(max_length=15, choices=EXPERIENCE_LEVEL_CHOICES, default='BEGINNER')
+    investment_horizon = models.IntegerField(default=1)  # Assuming this is in years
+    preferred_sectors = models.JSONField(default=list)  # Using JSONField for a list of sectors
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for profile creation
     updated_at = models.DateTimeField(auto_now=True)  # Timestamp for profile updates
 

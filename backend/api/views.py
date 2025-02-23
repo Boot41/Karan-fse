@@ -1,9 +1,8 @@
-
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import status, viewsets, generics, permissions
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
@@ -17,6 +16,111 @@ from .serializers import (
     MarketDataSerializer,
     LogoutSerializer
 )
+# List of known stock symbols (add more as needed)
+known_symbols = ['AAPL', 'TSLA', 'GOOG', 'AMZN', 'MSFT', 'FB']
+
+
+# Helper function to extract stock symbol from the query
+def extract_stock_symbol(query):
+    query = query.upper()
+    for symbol in known_symbols:
+        if symbol in query:
+            return symbol
+    return None
+
+# Function to fetch real-time stock data from Alpha Vantage API
+def get_stock_price_alpha_vantage(symbol):
+    api_key = 'YOUR_ALPHA_VANTAGE_API_KEY'  # Replace with your Alpha Vantage API key
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+
+    try:
+        latest_time = list(data['Time Series (5min)'].keys())[0]
+        return data['Time Series (5min)'][latest_time]['4. close']
+    except KeyError:
+        return None
+
+# Function to fetch real-time stock data from Finnhub API
+def get_stock_price_finnhub(symbol):
+    api_key = 'YOUR_FINNHUB_API_KEY'  # Replace with your Finnhub API key
+    url = f'https://finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}'
+    response = requests.get(url)
+    data = response.json()
+
+    try:
+        return data['c']  # 'c' stands for current price
+    except KeyError:
+        return None
+
+# API endpoint to handle the query and fetch stock data
+@api_view(['GET'])
+def live_stock_data(request, query):
+    """
+    This view will handle the query and extract the stock symbol,
+    then call external APIs to fetch real-time stock data.
+    """
+    # Step 1: Extract stock symbol from the query
+    symbol = extract_stock_symbol(query)
+
+    if not symbol:
+        return Response({
+            'error': 'Could not extract a stock symbol from your query.'
+        }, status=400)
+
+    # Step 2: Fetch stock prices (Alpha Vantage and Finnhub)
+    price_alpha_vantage = get_stock_price_alpha_vantage(symbol)
+    price_finnhub = get_stock_price_finnhub(symbol)
+
+    if price_alpha_vantage and price_finnhub:
+        combined_price = {
+            'symbol': symbol,
+            'price_alpha_vantage': price_alpha_vantage,
+            'price_finnhub': price_finnhub,
+            'query': query
+        }
+        return Response(combined_price)
+    else:
+        return Response({
+            'error': f'Unable to fetch data for {symbol} from both sources.'
+        }, status=400)
+
+# Use this API endpoint to fetch stock data with query like "Should I buy Tesla stock?"
+@api_view(['GET'])
+def get_stock_data_for_query(request, query):
+    """
+    Endpoint to get combined stock data from multiple APIs (Alpha Vantage and Finnhub).
+    """
+    # Fetch live stock data from the stock data API
+    stock_data = live_stock_data(request, query)
+
+    if stock_data.status_code != 200:
+        return stock_data  # Return error if fetching data fails
+    
+    # Prepare JSON data to be sent to Gemini for summarization
+    data_for_gemini = {
+        'user_profile': {
+            'risk_tolerance': request.user.profile.risk_tolerance,
+            'investment_style': request.user.profile.investment_style,
+            'income_range': request.user.profile.income_range,
+            'investment_reason': request.user.profile.investment_reason
+        },
+        'stock_data': stock_data.data
+    }
+
+    # Send data to Gemini API for summarization (Example URL, modify accordingly)
+    gemini_api_url = 'https://api.gemini.com/your-endpoint'
+    gemini_api_key = 'YOUR_GEMINI_API_KEY'  # Replace with your Gemini API key
+    headers = {'Authorization': f'Bearer {gemini_api_key}'}
+
+    response = requests.post(gemini_api_url, json=data_for_gemini, headers=headers)
+
+    if response.status_code == 200:
+        return Response(response.json())  # Return summarized response from Gemini
+    else:
+        return Response({
+            'error': 'Failed to communicate with Gemini API.'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 # ✅ User Registration API
 @api_view(['POST'])
@@ -90,6 +194,13 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Portfolio.objects.filter(user=self.request.user)
 
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Summarize portfolio details"""
+        portfolio = self.get_queryset()
+        total_value = sum(item.value for item in portfolio)  # Example calculation
+        return Response({'total_value': total_value})
+
 # ✅ Market Data ViewSet
 class MarketDataViewSet(viewsets.ModelViewSet):
     """
@@ -115,13 +226,51 @@ class LogoutView(APIView):
                 return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ✅ User Profile View
+# ✅ User Profile View (Updated for JWT Authentication)
 class UserProfileView(generics.RetrieveAPIView):
+    """
+    Retrieve user profile of the authenticated user.
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        # Ensure user profile exists or create one for the authenticated user
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        # Serialize the user profile and return the response
+        serializer = self.get_serializer(user_profile)
+        return Response(serializer.data)
+
+# ✅ Update Profile API (PUT profile)
+class UserProfileUpdateView(generics.UpdateAPIView):
+    """
+    Update user profile of the authenticated user.
+    """
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
-        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-        serializer = self.get_serializer(user_profile)
-        return Response(serializer.data)
+    def get_object(self):
+        # Get the user's profile
+        return UserProfile.objects.get(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        # Ensure user profile exists and update it
+        user_profile = self.get_object()
+        serializer = self.get_serializer(user_profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# ✅ Save Profile on Login API (POST save profile)
+class UserProfileSaveView(generics.CreateAPIView):
+    """
+    Save user profile details when the user logs in.
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Save the user's profile after login
+        serializer.save(user=self.request.user)

@@ -7,6 +7,26 @@ from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
 
+# 🎯 User Profile Serializer
+class UserProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = (
+            'id',
+            'email',
+            'name',
+            'risk_tolerance',
+            'investment_type',
+            'investment_reason',
+            'income_range',
+            'investment_experience',
+            'created_at',
+            'updated_at'
+        )
+        read_only_fields = ('id', 'email', 'created_at', 'updated_at')
+
 # 🎯 Logout Serializer
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -57,7 +77,16 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError({"error": "Invalid credentials"})
 
+        # Check if the user has a profile
+        profile, created = UserProfile.objects.get_or_create(user=user)
+
+        # If the profile was just created (new user), it might be incomplete
+        if created:
+            raise serializers.ValidationError({"error": "Profile is incomplete. Please complete your profile."})
+
+        # Create JWT tokens for the user
         refresh = RefreshToken.for_user(user)
+
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
@@ -92,26 +121,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'email', 'username')
-
-# 🎯 Updated User Profile Serializer
-class UserProfileSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source='user.email', read_only=True)
-
-    class Meta:
-        model = UserProfile
-        fields = (
-            'id',
-            'email',
-            'name',
-            'risk_tolerance',
-            'investment_type',
-            'investment_reason',
-            'income_range',
-            'investment_experience',
-            'created_at',
-            'updated_at'
-        )
-        read_only_fields = ('id', 'email', 'created_at', 'updated_at')
 
 # 🎯 Portfolio Serializer
 class PortfolioSerializer(serializers.ModelSerializer):

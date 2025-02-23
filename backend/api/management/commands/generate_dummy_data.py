@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from api.models import (
     UserProfile, Portfolio, Investment, StockAlert,
-    AIRecommendation, StockData, AIAnalysis
+    AIRecommendation, StockData, AIAnalysis, MarketData
 )
 from django.utils import timezone
 from decimal import Decimal
@@ -24,6 +24,66 @@ class Command(BaseCommand):
             ('AMZN', 'Amazon.com Inc.', 168.40, 170.00, 167.00, 750000, 1700000000000),
             ('TSLA', 'Tesla Inc.', 195.70, 198.00, 193.00, 1200000, 620000000000),
             ('META', 'Meta Platforms Inc.', 485.90, 490.00, 483.00, 600000, 1240000000000),
+        ]
+
+        # Sample market data
+        MARKET_DATA = [
+            {
+                'symbol': 'AAPL',
+                'current_price': 150.25,
+                'daily_change': 1.25,
+                'volume': 1000000,
+                'sentiment_score': 0.75
+            },
+            {
+                'symbol': 'GOOGL',
+                'current_price': 2800.50,
+                'daily_change': -15.00,
+                'volume': 500000,
+                'sentiment_score': 0.60
+            },
+            {
+                'symbol': 'AMZN',
+                'current_price': 3400.75,
+                'daily_change': 20.00,
+                'volume': 300000,
+                'sentiment_score': 0.80
+            },
+            {
+                'symbol': 'MSFT',
+                'current_price': 299.99,
+                'daily_change': 2.50,
+                'volume': 800000,
+                'sentiment_score': 0.70
+            },
+            {
+                'symbol': 'TSLA',
+                'current_price': 700.00,
+                'daily_change': -10.00,
+                'volume': 600000,
+                'sentiment_score': 0.65
+            },
+            {
+                'symbol': 'NFLX',
+                'current_price': 550.00,
+                'daily_change': 5.00,
+                'volume': 200000,
+                'sentiment_score': 0.85
+            },
+            {
+                'symbol': 'FB',
+                'current_price': 350.00,
+                'daily_change': -2.00,
+                'volume': 400000,
+                'sentiment_score': 0.60
+            },
+            {
+                'symbol': 'NVDA',
+                'current_price': 220.00,
+                'daily_change': 3.00,
+                'volume': 300000,
+                'sentiment_score': 0.75
+            }
         ]
 
         # Real-looking user data
@@ -102,7 +162,6 @@ class Command(BaseCommand):
 
             # Create stock data
             for symbol, name, price, high, low, volume, market_cap in STOCKS:
-                # Add some randomization to prices
                 current_price = Decimal(str(price + random.uniform(-5, 5)))
                 StockData.objects.update_or_create(
                     symbol=symbol,
@@ -200,5 +259,17 @@ class Command(BaseCommand):
                     response=f"Detailed analysis tailored to {user_data['first_name']}'s investment profile...",
                     summary=f"Key recommendations for {user_data['first_name']}'s portfolio strategy..."
                 )
+
+        # Create market data
+        for data in MARKET_DATA:
+            MarketData.objects.get_or_create(
+                symbol=data['symbol'],
+                defaults={
+                    'current_price': data['current_price'],
+                    'daily_change': data['daily_change'],
+                    'volume': data['volume'],
+                    'sentiment_score': data['sentiment_score']
+                }
+            )
 
         self.stdout.write(self.style.SUCCESS('Successfully generated dummy data'))
