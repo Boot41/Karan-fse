@@ -16,6 +16,74 @@ from .serializers import (
     MarketDataSerializer,
     LogoutSerializer
 )
+#api imports
+import requests
+from django.http import JsonResponse
+
+
+def get_stock_price_alpha_vantage(symbol):
+    api_key = 'ZRLEESP54OHIGBYP'  # Your Alpha Vantage API key
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={api_key}'
+    
+    try:
+        # Send the request to the Alpha Vantage API
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad HTTP responses
+
+        # Parse the JSON response
+        data = response.json()
+
+        # Check if the response contains valid data
+        if 'Time Series (5min)' in data:
+            # Get the latest available time from the time series data
+            latest_time = list(data['Time Series (5min)'].keys())[0]
+            # Extract the latest stock price (closing price)
+            latest_price = data['Time Series (5min)'][latest_time]['4. close']
+            return latest_price
+        else:
+            # If the expected data is not in the response, return None or an error message
+            return "Error: Stock data not found."
+
+    except requests.exceptions.RequestException as e:
+        # If the request fails (e.g., connection error), print the error
+        return f"Request failed: {e}"
+
+
+def stock_price_view(request, symbol):
+    price = get_stock_price_alpha_vantage(symbol)
+    return JsonResponse({'symbol': symbol, 'price': price})
+
+
+
+def get_stock_price_finhub(symbol):
+    api_key = 'cutneu1r01qv6ijjalo0cutneu1r01qv6ijjalog'  # Your Finhub API key
+    url = f'https://finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}'
+    
+    try:
+        # Send the request to the Finhub API
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad HTTP responses
+
+        # Parse the JSON response
+        data = response.json()
+
+        # Extract the current stock price
+        if 'c' in data:
+            return data['c']  # 'c' is the current price
+        else:
+            return "Error: Stock data not found."
+
+    except requests.exceptions.RequestException as e:
+        # If the request fails (e.g., connection error), print the error
+        return f"Request failed: {e}"
+
+def stock_price_finhub_view(request, symbol):
+    price = get_stock_price_finhub(symbol)
+    return JsonResponse({'symbol': symbol, 'price': price})
+
+
+
+
 # List of known stock symbols (add more as needed)
 known_symbols = ['AAPL', 'TSLA', 'GOOG', 'AMZN', 'MSFT', 'FB']
 

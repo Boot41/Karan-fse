@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from . import views
 from .views import (
     register_user, login_user, forgot_password,
     logout_user, UserProfileViewSet, PortfolioViewSet, MarketDataViewSet,
@@ -36,4 +37,12 @@ urlpatterns = [
     # Market data endpoints
     path('market/live/<str:symbol>/', MarketDataViewSet.as_view({'get': 'fetch_live_data'}), name='market-live-data'),
     path('market/recommendations/', MarketDataViewSet.as_view({'get': 'get_recommendations'}), name='market-recommendations'),
+
+    # Stock price endpoints
+    path('stock/price/<str:symbol>/', stock_price_view, name='stock-price'),
+    
+    #api key ulrs
+    path('api/stock-price-alpha-vantage/<str:symbol>/', views.stock_price_view, name='stock_price_alpha_vantage'),
+    path('api/stock-price-finhub/<str:symbol>/', views.stock_price_finhub_view, name='stock_price_finhub'),
+       
 ]
