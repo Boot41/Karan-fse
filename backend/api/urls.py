@@ -1,47 +1,46 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .views import (
     register_user, login_user, logout_user, forgot_password, stock_advisory_view,
     UserProfileViewSet, PortfolioViewSet, MarketDataViewSet
 )
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from django.http import JsonResponse
 
 # DRF Router for ViewSets
 router = DefaultRouter()
-router.register(r'profiles', UserProfileViewSet, basename='profile')
+router.register(r'profile', UserProfileViewSet, basename='profile')
 router.register(r'portfolio', PortfolioViewSet, basename='portfolio')
 router.register(r'market', MarketDataViewSet, basename='market')
 
-def home_view(request):
-    return JsonResponse({"message": "Welcome to the API!"})
-
+# URL patterns
 urlpatterns = [
     # Home view
-    path('', home_view, name='home'),
+    path('', lambda request: JsonResponse({"message": "Welcome to the API!"}), name='home'),
 
     # Register all ViewSet endpoints
-    path('', include(router.urls)),
+    path('api/', include(router.urls)),  # Automatically include the ViewSet routes
 
     # Authentication endpoints
-    path('auth/register/', register_user, name='register'),
-    path('auth/login/', login_user, name='login'),
-    path('auth/logout/', logout_user, name='logout'),
-    path('auth/forgot-password/', forgot_password, name='forgot_password'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/auth/register/', register_user, name='register'),
+    path('api/auth/login/', login_user, name='login'),
+    path('api/auth/logout/', logout_user, name='logout'),
+    path('api/auth/forgot-password/', forgot_password, name='forgot_password'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
     # Portfolio summary endpoint (calls PortfolioViewSet summary action)
-    path('portfolio/summary/', PortfolioViewSet.as_view({'get': 'summary'}), name='portfolio-summary'),
+    path('api/portfolio/summary/', PortfolioViewSet.as_view({'get': 'summary'}), name='portfolio-summary'),
 
     # Market data endpoints
-    path('market/live/<str:symbol>/', MarketDataViewSet.as_view({'get': 'fetch_live_data'}), name='market-live-data'),
-    path('market/recommendations/', MarketDataViewSet.as_view({'get': 'get_recommendations'}), name='market-recommendations'),
+    path('api/market/live/<str:symbol>/', MarketDataViewSet.as_view({'get': 'fetch_live_data'}), name='market-live-data'),
+    path('api/market/recommendations/', MarketDataViewSet.as_view({'get': 'get_recommendations'}), name='market-recommendations'),
 
     # Stock advisory endpoint
-    path('stock/advisory/', stock_advisory_view, name='stock-advisory'),
+    path('api/stock/advisory/', stock_advisory_view, name='stock-advisory'),
 
     # Redundant endpoints using stock_advisory_view (if needed)
-    path('stock/price/', stock_advisory_view, name='stock-price'),
+    path('api/stock/price/', stock_advisory_view, name='stock-price'),
     path('api/stock-price-alpha-vantage/', stock_advisory_view, name='stock_price_alpha_vantage'),
     path('api/stock-price-finhub/', stock_advisory_view, name='stock_price_finhub'),
 ]

@@ -32,6 +32,7 @@ const Home = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Portfolio Allocation */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Portfolio Allocation</h2>
           <div className="h-64">
@@ -56,6 +57,7 @@ const Home = () => {
           </div>
         </div>
 
+        {/* Holdings Overview */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Holdings Overview</h2>
           <div className="space-y-4">
@@ -86,6 +88,7 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Recent Transactions */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
         <div className="overflow-x-auto">
@@ -100,20 +103,15 @@ const Home = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
+              {/* Example Transaction Row */}
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-03-15</td>
                 <td className="px-6 py-4 whitespace-nowrap">AAPL</td>
-                <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Buy</span></td>
-                <td className="px-6 py-4 whitespace-nowrap">5</td>
-                <td className="px-6 py-4 whitespace-nowrap">$175.00</td>
+                <td className="px-6 py-4 whitespace-nowrap">Buy</td>
+                <td className="px-6 py-4 whitespace-nowrap">10</td>
+                <td className="px-6 py-4 whitespace-nowrap">$1750</td>
               </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-03-14</td>
-                <td className="px-6 py-4 whitespace-nowrap">GOOGL</td>
-                <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Sell</span></td>
-                <td className="px-6 py-4 whitespace-nowrap">2</td>
-                <td className="px-6 py-4 whitespace-nowrap">$2,950.00</td>
-              </tr>
+              {/* Add more rows here */}
             </tbody>
           </table>
         </div>

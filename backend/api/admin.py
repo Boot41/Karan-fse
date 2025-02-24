@@ -5,10 +5,17 @@ from .models import UserProfile, Portfolio, MarketData
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'risk_tolerance', 'income_range', 'investment_experience']  # Removed invalid fields
-    list_filter = ['risk_tolerance', 'investment_experience']  # Fixed field name
+    list_display = ['user', 'risk_tolerance', 'income_range', 'investment_experience', 'preferred_sectors']  # Added 'preferred_sectors'
+    list_filter = ['risk_tolerance', 'investment_experience', 'preferred_sectors']  # Added 'preferred_sectors' for filtering
     search_fields = ['user__email', 'user__username']
     ordering = ('-id',)  # Changed 'created_at' to 'id' since 'created_at' doesn't exist
+
+    # Customize the form for 'preferred_sectors' to show a dropdown
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'risk_tolerance', 'income_range', 'investment_experience', 'preferred_sectors')
+        }),
+    )
 
 @admin.register(Portfolio)
 class PortfolioAdmin(admin.ModelAdmin):

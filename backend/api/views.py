@@ -260,10 +260,5 @@ class MarketDataViewSet(viewsets.ModelViewSet):
                     "source": source
                 })
             else:
-                real_time_data.append({
-                    "symbol": symbol,
-                    "price": "Unavailable",
-                    "source": "N/A"
-                })
-
+                real_time_data.append({"symbol": symbol, "price": "Data not available"})
         return Response(real_time_data, status=status.HTTP_200_OK)

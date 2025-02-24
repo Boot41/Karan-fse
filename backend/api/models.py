@@ -41,6 +41,12 @@ class UserProfile(models.Model):
         ('HIGH', 'High'),
     ]
     
+    PREFERRED_SECTORS_CHOICES = [
+        ('EDUCATION', 'Education'),
+        ('REAL_ESTATE', 'Real Estate'),
+        ('WEALTH_GROWTH', 'Wealth Growth'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)  # Links to the main User model
     name = models.CharField(max_length=100)  # User's display name/profile name
     risk_tolerance = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)], default=5)  # Integer range from 0-10 with default 5
@@ -55,7 +61,14 @@ class UserProfile(models.Model):
     ], default='Conservative')
     experience_level = models.CharField(max_length=15, choices=EXPERIENCE_LEVEL_CHOICES, default='BEGINNER')
     investment_horizon = models.IntegerField(default=1)  # Assuming this is in years
-    preferred_sectors = models.JSONField(default=list)  # Using JSONField for a list of sectors
+    
+    # Correctly defined preferred_sectors as a CharField with choices
+    preferred_sectors = models.CharField(
+        max_length=20,  # Ensure this matches the length of your options
+        choices=PREFERRED_SECTORS_CHOICES,
+        default='EDUCATION'  # Set a default value if needed
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for profile creation
     updated_at = models.DateTimeField(auto_now=True)  # Timestamp for profile updates
 

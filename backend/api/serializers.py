@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from .models import UserProfile, Portfolio, MarketData
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
@@ -44,18 +43,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['email', 'password']  # Only email and password fields are required
 
     def validate_email(self, value):
+        """Ensure email is unique"""
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email is already in use.")
         return value
 
     def create(self, validated_data):
+        """Create a new user"""
+        # Generate a username from the email or use a default one
+        username = validated_data['email'].split('@')[0]  # Use part before '@' as username
+
         user = User.objects.create_user(
-            username=validated_data['username'],
+            username=username,  # Automatically set username from email
             email=validated_data['email'],
-            password=validated_data['password']
+            password=validated_data['password'],
         )
         return user
 
