@@ -1,32 +1,37 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Welcome from './components/Welcome';
 import UserInfo from './components/UserInfo';
 import HomePage from './components/HomePage';
 import ProfilePage from './components/Profile';
 import AboutUs from './components/AboutUs';
 
-const PrivateRoute = ({ children }) => {
+// PrivateRoute component ensures the user is logged in before accessing a route
+const PrivateRoute = ({ element }) => {
   const token = localStorage.getItem('token');
   if (!token) {
-    return <Route path="/" element={<Welcome />} />;
+    // If no token, redirect to the Welcome (Login/Signup) page
+    return <Navigate to="/" />;
   }
-  return children;
+  return element;
 };
 
-const AuthenticatedRoute = ({ children }) => {
+// AuthenticatedRoute component ensures the user has a profile before proceeding
+const AuthenticatedRoute = ({ element }) => {
   const token = localStorage.getItem('token');
   const userProfile = localStorage.getItem('userProfile');
   
   if (!token) {
-    return <Route path="/" element={<Welcome />} />;
+    // If no token, redirect to the Welcome (Login/Signup) page
+    return <Navigate to="/" />;
   }
-  
+
+  // If there's no profile but user is not at /userinfo, redirect to /userinfo
   if (!userProfile && window.location.pathname !== '/userinfo') {
-    return <Route path="/userinfo" element={<UserInfo />} />;
+    return <Navigate to="/userinfo" />;
   }
   
-  return children;
+  return element;
 };
 
 function App() {
@@ -34,43 +39,35 @@ function App() {
     <Router>
       <Routes>
         {/* Public Route */}
-        <Route path="/" exact element={<Welcome />} />
+        <Route path="/" element={<Welcome />} />
         
-        {/* Protected Route - Only needs authentication */}
+        {/* Protected Route - Requires authentication */}
         <Route
           path="/userinfo"
           element={
-            <PrivateRoute>
-              <UserInfo />
-            </PrivateRoute>
+            <PrivateRoute element={<UserInfo />} />
           }
         />
         
-        {/* Protected Routes - Need both authentication and profile completion */}
+        {/* Protected Routes - Requires authentication and profile completion */}
         <Route
           path="/homepage"
           element={
-            <AuthenticatedRoute>
-              <HomePage />
-            </AuthenticatedRoute>
+            <AuthenticatedRoute element={<HomePage />} />
           }
         />
         
         <Route
           path="/profile"
           element={
-            <AuthenticatedRoute>
-              <ProfilePage />
-            </AuthenticatedRoute>
+            <AuthenticatedRoute element={<ProfilePage />} />
           }
         />
         
         <Route
           path="/about"
           element={
-            <AuthenticatedRoute>
-              <AboutUs />
-            </AuthenticatedRoute>
+            <AuthenticatedRoute element={<AboutUs />} />
           }
         />
       </Routes>
