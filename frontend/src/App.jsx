@@ -10,7 +10,7 @@ import AboutUs from './components/AboutUs';
 const PrivateRoute = ({ element }) => {
   const token = localStorage.getItem('token');
   if (!token) {
-    // If no token, redirect to the Welcome (Login/Signup) page
+    // If no token, redirect to the Login (Welcome) page
     return <Navigate to="/" />;
   }
   return element;
@@ -22,7 +22,7 @@ const AuthenticatedRoute = ({ element }) => {
   const userProfile = localStorage.getItem('userProfile');
   
   if (!token) {
-    // If no token, redirect to the Welcome (Login/Signup) page
+    // If no token, redirect to the Login (Welcome) page
     return <Navigate to="/" />;
   }
 
@@ -38,10 +38,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Route */}
+        {/* Public Route - Welcome/Login Page */}
         <Route path="/" element={<Welcome />} />
         
-        {/* Protected Route - Requires authentication */}
+        {/* User Info Route - Completed after user logs in */}
         <Route
           path="/userinfo"
           element={
@@ -49,18 +49,11 @@ function App() {
           }
         />
         
-        {/* Protected Routes - Requires authentication and profile completion */}
+        {/* Authenticated Routes */}
         <Route
-          path="/homepage"
+          path="/home"
           element={
             <AuthenticatedRoute element={<HomePage />} />
-          }
-        />
-        
-        <Route
-          path="/profile"
-          element={
-            <AuthenticatedRoute element={<ProfilePage />} />
           }
         />
         
@@ -68,6 +61,13 @@ function App() {
           path="/about"
           element={
             <AuthenticatedRoute element={<AboutUs />} />
+          }
+        />
+        
+        <Route
+          path="/profile"
+          element={
+            <AuthenticatedRoute element={<ProfilePage />} />
           }
         />
       </Routes>

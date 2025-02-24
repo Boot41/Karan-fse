@@ -248,12 +248,10 @@ class MarketDataViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """Override the list method to return real-time market data."""
-        # Example list of stock symbols to fetch real-time data for
-        stock_symbols = ["AAPL", "GOOGL", "AMZN"]  # You can modify this list or fetch dynamically
+        stock_symbols = ["AAPL", "GOOGL", "AMZN"]  # Modify this list as needed
         real_time_data = []
 
         for symbol in stock_symbols:
-            # Fetch real-time stock price
             price, source = get_stock_price(symbol)
             if price is not None:
                 real_time_data.append({

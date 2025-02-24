@@ -12,7 +12,13 @@ router.register(r'profiles', UserProfileViewSet, basename='profile')
 router.register(r'portfolio', PortfolioViewSet, basename='portfolio')
 router.register(r'market', MarketDataViewSet, basename='market')
 
+def home_view(request):
+    return JsonResponse({"message": "Welcome to the API!"})
+
 urlpatterns = [
+    # Home view
+    path('', home_view, name='home'),
+
     # Register all ViewSet endpoints
     path('', include(router.urls)),
 
@@ -28,12 +34,10 @@ urlpatterns = [
     path('portfolio/summary/', PortfolioViewSet.as_view({'get': 'summary'}), name='portfolio-summary'),
 
     # Market data endpoints
-    # Fetch live market data for a given stock symbol (e.g., /market/live/TSLA/)
     path('market/live/<str:symbol>/', MarketDataViewSet.as_view({'get': 'fetch_live_data'}), name='market-live-data'),
-    # Get market recommendations based on user data
     path('market/recommendations/', MarketDataViewSet.as_view({'get': 'get_recommendations'}), name='market-recommendations'),
 
-    # Stock advisory endpoint (dynamic stock search, live data, user profile & AI advice)
+    # Stock advisory endpoint
     path('stock/advisory/', stock_advisory_view, name='stock-advisory'),
 
     # Redundant endpoints using stock_advisory_view (if needed)
