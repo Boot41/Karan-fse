@@ -1,11 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from . import views
 from .views import (
-    register_user, login_user, forgot_password,
-    logout_user, UserProfileViewSet, PortfolioViewSet, MarketDataViewSet,
-    UserProfileView, UserProfileUpdateView, UserProfileSaveView
+    register_user, login_user, logout_user, forgot_password, stock_advisory_view,
+    UserProfileViewSet, PortfolioViewSet, MarketDataViewSet
 )
 
 # DRF Router for ViewSets
@@ -15,7 +13,7 @@ router.register(r'portfolio', PortfolioViewSet, basename='portfolio')
 router.register(r'market', MarketDataViewSet, basename='market')
 
 urlpatterns = [
-    # Register all ViewSets
+    # Register all ViewSet endpoints
     path('', include(router.urls)),
 
     # Authentication endpoints
@@ -26,23 +24,20 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
-    # User Profile endpoints
-    path('profile/', UserProfileView.as_view(), name='get-profile'),
-    path('profile/update/', UserProfileUpdateView.as_view(), name='update-profile'),
-    path('profile/save/', UserProfileSaveView.as_view(), name='save-profile'),
-
-    # Portfolio summary endpoint
+    # Portfolio summary endpoint (calls PortfolioViewSet summary action)
     path('portfolio/summary/', PortfolioViewSet.as_view({'get': 'summary'}), name='portfolio-summary'),
 
     # Market data endpoints
+    # Fetch live market data for a given stock symbol (e.g., /market/live/TSLA/)
     path('market/live/<str:symbol>/', MarketDataViewSet.as_view({'get': 'fetch_live_data'}), name='market-live-data'),
+    # Get market recommendations based on user data
     path('market/recommendations/', MarketDataViewSet.as_view({'get': 'get_recommendations'}), name='market-recommendations'),
 
-    # Stock price endpoints
-    path('stock/price/<str:symbol>/', stock_price_view, name='stock-price'),
-    
-    #api key ulrs
-    path('api/stock-price-alpha-vantage/<str:symbol>/', views.stock_price_view, name='stock_price_alpha_vantage'),
-    path('api/stock-price-finhub/<str:symbol>/', views.stock_price_finhub_view, name='stock_price_finhub'),
-       
+    # Stock advisory endpoint (dynamic stock search, live data, user profile & AI advice)
+    path('stock/advisory/', stock_advisory_view, name='stock-advisory'),
+
+    # Redundant endpoints using stock_advisory_view (if needed)
+    path('stock/price/', stock_advisory_view, name='stock-price'),
+    path('api/stock-price-alpha-vantage/', stock_advisory_view, name='stock_price_alpha_vantage'),
+    path('api/stock-price-finhub/', stock_advisory_view, name='stock_price_finhub'),
 ]
