@@ -17,10 +17,9 @@ router.register(r'user-profiles', UserProfileViewSet, basename='user-profile')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),
+    path('api/', include('api.urls')),  # Include API URLs from api/urls.py
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include('api.urls')),
 ]
 
 if settings.DEBUG:

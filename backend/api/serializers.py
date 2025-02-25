@@ -10,6 +10,34 @@ User = get_user_model()
 class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
 
+    INVESTMENT_TYPE_CHOICES = [
+        ('short-term', 'Short-term'),
+        ('mid-term', 'Mid-term'),
+        ('long-term', 'Long-term'),
+    ]
+
+    INVESTMENT_REASON_CHOICES = [
+        ('wealth growth', 'Wealth Growth'),
+        ('education', 'Education'),
+        ('retirement', 'Retirement'),
+        ('estate', 'Estate'),
+    ]
+
+    INCOME_RANGE_CHOICES = [
+        ('under 2 LPA', 'Under 2 LPA'),
+        ('2 LPA - 5 LPA', '2 LPA - 5 LPA'),
+        ('5 LPA - 10 LPA', '5 LPA - 10 LPA'),
+        ('10 LPA - 15 LPA', '10 LPA - 15 LPA'),
+        ('15 LPA - 20 LPA', '15 LPA - 20 LPA'),
+        ('20 LPA+', '20 LPA+'),
+    ]
+
+    INVESTMENT_EXPERIENCE_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
+
     class Meta:
         model = UserProfile
         fields = (
@@ -25,6 +53,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'updated_at'
         )
         read_only_fields = ('id', 'email', 'created_at', 'updated_at')
+
+    investment_type = serializers.ChoiceField(choices=INVESTMENT_TYPE_CHOICES)
+    investment_reason = serializers.ChoiceField(choices=INVESTMENT_REASON_CHOICES)
+    income_range = serializers.ChoiceField(choices=INCOME_RANGE_CHOICES)
+    investment_experience = serializers.ChoiceField(choices=INVESTMENT_EXPERIENCE_CHOICES)
 
 # 🎯 Logout Serializer
 class LogoutSerializer(serializers.Serializer):

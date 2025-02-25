@@ -1,21 +1,42 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 
 const Profile = () => {
-    const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+  const [error, setError] = useState(null);
 
-    const handleAddInvestment = () => {
-        // Logic to add a new stock
-    };
+  useEffect(() => {
+    try {
+      const profileData = localStorage.getItem('userProfile');
+      if (profileData) {
+        setUserProfile(JSON.parse(profileData));  // Safely parse the JSON
+      }
+    } catch (err) {
+      setError('Something went wrong while loading your profile. Please try again.');
+      console.error('Error parsing JSON from localStorage:', err);
+    }
+  }, []);
 
-    return (
-        <div className="p-4">
-            <h1 className="text-2xl font-bold">User Portfolio</h1>
-            {/* Portfolio details will be displayed here */}
-            <button onClick={handleAddInvestment} className="px-4 py-2 bg-blue-500 text-white rounded">Add Investment</button>
-            <button onClick={() => navigate('/homepage')} className="px-4 py-2 bg-gray-500 text-white rounded">Back to Dashboard</button>
-        </div>
-    );
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  if (!userProfile) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md mb-12">
+      <h2 className="text-2xl font-semibold mb-4">Your Profile</h2>
+      
+      <p><strong>Name:</strong> {userProfile.name}</p>
+      <p><strong>Investment Experience:</strong> {userProfile.investment_experience}</p>
+      <p><strong>Income Range:</strong> {userProfile.income_range}</p>
+      <p><strong>Risk Tolerance:</strong> {userProfile.risk_tolerance}</p>
+      <p><strong>Investment Type:</strong> {userProfile.investment_type}</p>
+      <p><strong>Investment Reason:</strong> {userProfile.investment_reason}</p>
+      <p><strong>Preferred Sectors:</strong> {userProfile.preferred_sectors}</p>
+    </div>
+  );
 };
 
 export default Profile;

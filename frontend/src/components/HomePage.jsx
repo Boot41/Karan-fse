@@ -1,123 +1,101 @@
-import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const Home = () => {
-  // Dummy data for demonstration
-  const portfolio = {
-    stocks: [
-      { symbol: 'AAPL', name: 'Apple Inc.', quantity: 10, purchasePrice: 150, currentPrice: 175 },
-      { symbol: 'GOOGL', name: 'Alphabet Inc.', quantity: 5, purchasePrice: 2800, currentPrice: 2950 },
-      { symbol: 'MSFT', name: 'Microsoft Corp.', quantity: 15, purchasePrice: 280, currentPrice: 310 },
-      { symbol: 'AMZN', name: 'Amazon.com Inc.', quantity: 8, purchasePrice: 3200, currentPrice: 3400 },
-    ],
-    pieData: [
-      { name: 'Technology', value: 45 },
-      { name: 'Healthcare', value: 25 },
-      { name: 'Finance', value: 20 },
-      { name: 'Consumer', value: 10 },
-    ],
+const HomePage = () => {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = () => {
+    console.log('Searching for:', searchQuery);
+    // You can navigate to a search results page or filter data based on the query
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Investment Portfolio</h1>
-        <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          <Plus className="w-5 h-5" />
-          <span>Add Investment</span>
+    <div className="bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 min-h-screen p-8">
+      {/* Navigation Bar */}
+      <div className="flex justify-between items-center bg-gray-800 p-4 rounded-lg shadow-md mb-8">
+        <h1 className="text-3xl font-bold text-white">AI-Driven Investment Advisory</h1>
+        <div className="flex space-x-4">
+          <button 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg transition-transform transform hover:scale-110 hover:shadow-lg hover:bg-blue-700 active:scale-95 active:shadow-none"
+            onClick={() => navigate('/dashboard')}
+          >
+            Dashboard
+          </button>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <div className="text-center text-white mb-12">
+        <h2 className="text-4xl font-semibold mb-4">Unlock Your Investment Potential</h2>
+        <p className="text-lg mb-8">Get personalized AI-driven recommendations based on your preferences, risk tolerance, and real-time market data.</p>
+        <button
+          className="bg-green-600 text-white px-6 py-3 rounded-lg text-lg transition-transform transform hover:scale-110 hover:shadow-lg active:scale-95 active:shadow-none"
+          onClick={() => navigate('/get-started')} // This will redirect the user to the 'get-started' page
+        >
+          Get Started
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Portfolio Allocation */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Portfolio Allocation</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={portfolio.pieData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {portfolio.pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Holdings Overview */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Holdings Overview</h2>
-          <div className="space-y-4">
-            {portfolio.stocks.map((stock) => {
-              const totalValue = stock.quantity * stock.currentPrice;
-              const profit = (stock.currentPrice - stock.purchasePrice) * stock.quantity;
-              const profitPercentage = ((stock.currentPrice - stock.purchasePrice) / stock.purchasePrice) * 100;
-              
-              return (
-                <div key={stock.symbol} className="border-b pb-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold">{stock.name}</h3>
-                      <p className="text-sm text-gray-500">{stock.symbol}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${totalValue.toLocaleString()}</p>
-                      <div className={`flex items-center ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {profit >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                        <span className="ml-1">{profitPercentage.toFixed(2)}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Search Section */}
+      <div className="bg-white p-8 rounded-lg shadow-md mb-12">
+        <h2 className="text-2xl font-semibold mb-4 text-center">Ask AI for Investment Advice</h2>
+        <div className="flex justify-center space-x-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Type your investment question..."
+            className="flex-1 p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500 transition-transform transform hover:scale-105"
+          />
+          <button
+            onClick={handleSearch}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg transition-transform transform hover:scale-110 hover:shadow-lg active:scale-95 active:shadow-none"
+          >
+            Ask AI
+          </button>
         </div>
       </div>
 
-      {/* Recent Transactions */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {/* Example Transaction Row */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-03-15</td>
-                <td className="px-6 py-4 whitespace-nowrap">AAPL</td>
-                <td className="px-6 py-4 whitespace-nowrap">Buy</td>
-                <td className="px-6 py-4 whitespace-nowrap">10</td>
-                <td className="px-6 py-4 whitespace-nowrap">$1750</td>
-              </tr>
-              {/* Add more rows here */}
-            </tbody>
-          </table>
+      {/* Market Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
+          <h3 className="text-xl font-semibold mb-4">Latest Market News</h3>
+          <ul className="space-y-3">
+            <li><a href="#" className="text-blue-600 hover:underline">Tech stocks surge as earnings reports exceed expectations.</a></li>
+            <li><a href="#" className="text-blue-600 hover:underline">Healthcare sector shows resilience amid economic uncertainty.</a></li>
+            <li><a href="#" className="text-blue-600 hover:underline">Investors eye renewable energy as a long-term growth opportunity.</a></li>
+          </ul>
         </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
+          <h3 className="text-xl font-semibold mb-4">Personalized Investment Tips</h3>
+          <p className="text-gray-700 mb-4">Based on your profile and market trends, consider the following:</p>
+          <ul className="space-y-2 text-gray-700">
+            <li>Diversify your portfolio to mitigate risks.</li>
+            <li>Invest in sectors that align with future trends, such as AI and renewable energy.</li>
+            <li>Regularly review your investments and adjust based on market conditions.</li>
+          </ul>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
+          <h3 className="text-xl font-semibold mb-4">Educational Resources</h3>
+          <p className="text-gray-700 mb-4">Enhance your investment knowledge with these resources:</p>
+          <ul className="space-y-2 text-gray-700">
+            <li><a href="/resources/webinars" className="text-blue-600 hover:underline">Webinars on Investment Strategies</a></li>
+            <li><a href="/resources/articles" className="text-blue-600 hover:underline">Articles on Market Analysis</a></li>
+            <li><a href="/resources/tools" className="text-blue-600 hover:underline">Tools for Portfolio Management</a></li>
+          </ul>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-semibold text-white mb-4">Start Making Informed Investment Decisions Today</h2>
+        <p className="text-lg text-white mb-6">Leverage the power of AI to make smarter, data-backed decisions about your investments.</p>
       </div>
     </div>
   );
 };
 
-export default Home;
+export default HomePage;

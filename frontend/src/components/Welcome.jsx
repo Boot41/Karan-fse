@@ -44,7 +44,7 @@ const Welcome = ({ onLogin }) => {
         }
 
         // API request for sign-up
-        response = await axios.post('http://127.0.0.1:8000/api/api/auth/register/', {
+        response = await axios.post('http://127.0.0.1:8000/api/auth/register/', {
           email: formData.email,
           password: formData.password,
         });
@@ -52,11 +52,23 @@ const Welcome = ({ onLogin }) => {
         console.log('Sign-up response:', response.data); // Log the response for debugging
 
         if (response.data) {
-          navigate('/userinfo'); // Redirect to user info after successful sign-up
+          // After successful registration, automatically log in
+          const loginResponse = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
+            email: formData.email,
+            password: formData.password,
+          });
+
+          // Store tokens and user info
+          localStorage.setItem('jwtToken', loginResponse.data.access);
+          localStorage.setItem('refreshToken', loginResponse.data.refresh);
+          localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+
+          onLogin(); // Notify App component
+          navigate('/userinfo'); // Redirect to complete profile
         }
       } else {
-        // API request for login (corrected URL)
-        response = await axios.post('http://127.0.0.1:8000/api/api/auth/login/', {
+        // API request for login
+        response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
           email: formData.email,
           password: formData.password,
         });
@@ -76,29 +88,23 @@ const Welcome = ({ onLogin }) => {
     } catch (err) {
       console.error('Error during request:', err);
 
-      // Log the error response data
       if (err.response) {
-        console.error('Error response data:', err.response.data); // Log the error response
-
         let errorMessage = 'An error occurred';
 
         if (err.response.data) {
-          // Enhanced error handling based on server response
           if (err.response.data.detail) {
-            errorMessage = err.response.data.detail;  // Extract detail from error response
+            errorMessage = err.response.data.detail;  
           } else if (err.response.data.non_field_errors) {
-            errorMessage = err.response.data.non_field_errors[0]; // Handle non-field errors
+            errorMessage = err.response.data.non_field_errors[0]; 
           } else if (err.response.data.email) {
             errorMessage = 'This email is already registered. Please try another one.';
           }
         }
 
-        setError(errorMessage);  // Show error message in UI
+        setError(errorMessage);  
       } else if (err.request) {
-        console.error('Error request:', err.request);  // Log the request error if no response
         setError('Server did not respond');
       } else {
-        console.error('Error message:', err.message); // Log general error messages
         setError('Something went wrong. Please try again.');
       }
     } finally {
@@ -107,9 +113,9 @@ const Welcome = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white shadow-md rounded-lg p-6 max-w-sm w-full">
-        <h2 className="text-2xl font-semibold text-center mb-6">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 p-4">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-sm w-full transform transition-all duration-300 ease-in-out hover:scale-105">
+        <h2 className="text-3xl font-semibold text-center mb-6 text-blue-600">
           {isSignUp ? 'Sign Up' : 'Login'}
         </h2>
         <form onSubmit={handleSubmit}>
@@ -124,7 +130,7 @@ const Welcome = ({ onLogin }) => {
               value={formData.email}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-2 mt-2 border rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 mt-2 border rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-transform hover:scale-105"
             />
           </div>
 
@@ -139,7 +145,7 @@ const Welcome = ({ onLogin }) => {
               value={formData.password}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-2 mt-2 border rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 mt-2 border rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-transform hover:scale-105"
             />
           </div>
 
@@ -156,7 +162,7 @@ const Welcome = ({ onLogin }) => {
                   value={formData.confirm_password}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 mt-2 border rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full px-4 py-2 mt-2 border rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-transform hover:scale-105"
                 />
               </div>
             </>
@@ -167,7 +173,7 @@ const Welcome = ({ onLogin }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-500 text-white py-2 mt-4 rounded-md focus:outline-none hover:bg-blue-600 disabled:bg-gray-400"
+            className="w-full bg-blue-600 text-white py-2 mt-4 rounded-md focus:outline-none hover:bg-blue-700 disabled:bg-gray-400 transition-all duration-300 ease-in-out transform hover:scale-105"
           >
             {isLoading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Login'}
           </button>

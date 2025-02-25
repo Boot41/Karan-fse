@@ -7,10 +7,11 @@ import HomePage from './components/HomePage';
 import ProfilePage from './components/Profile';
 import AboutUs from './components/AboutUs';
 import Navbar from './components/Navbar';
+import Dashboard from './components/Dashboard'; // Import the Dashboard component
 import ErrorBoundary from './components/ErrorBoundary';
 
 const PrivateRoute = ({ element }) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwtToken');
   if (!token) {
     return <Navigate to="/" />;
   }
@@ -18,7 +19,7 @@ const PrivateRoute = ({ element }) => {
 };
 
 const AuthenticatedRoute = ({ element }) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwtToken');
   const userProfile = localStorage.getItem('userProfile');
 
   if (!token) {
@@ -33,14 +34,14 @@ const AuthenticatedRoute = ({ element }) => {
 };
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('jwtToken'));
 
   const handleLogin = () => {
     setIsLoggedIn(true);
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('jwtToken');
     setIsLoggedIn(!!token);
   }, []);
 
@@ -58,6 +59,19 @@ function App() {
                   <>
                     <Navbar />
                     <HomePage />
+                  </>
+                }
+              />
+            }
+          />
+          <Route
+            path="/dashboard" // Add the dashboard route
+            element={
+              <AuthenticatedRoute
+                element={
+                  <>
+                    <Navbar />
+                    <Dashboard />
                   </>
                 }
               />

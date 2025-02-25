@@ -1,4 +1,5 @@
 import requests
+import logging
 from django.http import JsonResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, action
@@ -29,7 +30,7 @@ def extract_stock_query(user_input):
     """Extracts stock-related keywords from a natural language query."""
     keywords = ["buy", "sell", "invest", "currently", "what is", "can I"]
     words = user_input.lower().split()
-    
+
     action = next((word for word in words if word in keywords), None)
     stock_name = " ".join(word for word in words if word not in keywords and word.isalpha())
 
@@ -198,6 +199,7 @@ def forgot_password(request):
 
 # User Profile API
 class UserProfileViewSet(viewsets.ModelViewSet):
+    queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
@@ -211,30 +213,28 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'])
-    def save_profile(self, request):
-        """Save user info from UserInfo.jsx after login"""
+    @action(detail=False, methods=['post'])  # Added POST to create a new profile
+    def create_profile(self, request):
+        """Create a new user profile"""
         serializer = self.get_serializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response({'message': 'Profile saved successfully'}, status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)  # 201 for created
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['put'])
-    def update_profile(self, request):
-        """Update profile when the user edits it"""
-        try:
-            profile = UserProfile.objects.get(user=request.user)
-            serializer = self.get_serializer(profile, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'message': 'Profile updated successfully'}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except UserProfile.DoesNotExist:
-            return Response({'error': 'User profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['put'])  # Keep PUT to update an existing profile
+    def save_profile(self, request):
+        """Save user info from UserInfo.jsx after login"""
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(profile, data=request.data, partial=True)  # Allow partial updates
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)  # 200 for successful update
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# Portfolio API
 class PortfolioViewSet(viewsets.ModelViewSet):
-    """Viewset for managing portfolios."""
+    queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
     permission_classes = [IsAuthenticated]
 
@@ -242,23 +242,32 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         return Portfolio.objects.filter(user=self.request.user)
 
 class MarketDataViewSet(viewsets.ModelViewSet):
-    """Viewset for managing market data."""
+    """Handles stock market data."""
+    queryset = MarketData.objects.all()
     serializer_class = MarketDataSerializer
     permission_classes = [IsAuthenticated]
 
-    def list(self, request, *args, **kwargs):
-        """Override the list method to return real-time market data."""
-        stock_symbols = ["AAPL", "GOOGL", "AMZN"]  # Modify this list as needed
-        real_time_data = []
+    def get_queryset(self):
+        return MarketData.objects.all()
 
-        for symbol in stock_symbols:
-            price, source = get_stock_price(symbol)
-            if price is not None:
-                real_time_data.append({
-                    "symbol": symbol,
-                    "price": price,
-                    "source": source
-                })
-            else:
-                real_time_data.append({"symbol": symbol, "price": "Data not available"})
-        return Response(real_time_data, status=status.HTTP_200_OK)
+@api_view(['PUT'])  # Changed to PUT to match your request
+@permission_classes([IsAuthenticated])  # Ensure that only authenticated users can save their profile
+def save_profile_view(request):
+    """Save user profile data."""
+    logger = logging.getLogger(__name__)
+    logger.info("Save profile view called")
+    user = request.user
+    data = request.data  # Profile data from the request
+
+    # Check if the user already has a profile
+    profile, created = UserProfile.objects.get_or_create(user=user)
+
+    # Serialize the data and update the profile
+    serializer = UserProfileSerializer(profile, data=data, partial=True)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Profile saved successfully."}, status=status.HTTP_200_OK)
+    
+    logger.error("Profile save failed: %s", serializer.errors)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
