@@ -48,6 +48,7 @@ const UserInfo = () => {
     };
 
     try {
+      // Send the data to the backend
       const response = await axios.put(
         'http://127.0.0.1:8000/api/profile/save/', 
         userProfileData,
@@ -60,8 +61,8 @@ const UserInfo = () => {
       );
 
       if (response.status === 200) {
-        // Save the profile data in localStorage as a valid JSON string
-        localStorage.setItem('userProfile', JSON.stringify(userProfileData));
+        // Save profile data to localStorage
+        localStorage.setItem('userProfile', JSON.stringify(userProfileData)); // Save as JSON string
         navigate('/home');
       }
     } catch (error) {
@@ -202,17 +203,20 @@ const UserInfo = () => {
                 required
               >
                 <option value="">Select Preferred Sector</option>
-                <option value="education">Education</option>
-                <option value="realestate">Real Estate</option>
-                <option value="wealthgrowth">Wealth Growth</option>
+                <option value="technology">Technology</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="finance">Finance</option>
+                <option value="real estate">Real Estate</option>
+                <option value="energy">Energy</option>
+                <option value="consumer goods">Consumer Goods</option>
               </select>
             </div>
 
-            {/* Submit Button */}
-            <div>
+            {/* Save Profile Button */}
+            <div className="mt-6">
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 disabled={isLoading}
               >
                 {isLoading ? 'Saving...' : 'Save Profile'}

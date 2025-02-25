@@ -13,6 +13,7 @@ const Welcome = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -21,95 +22,110 @@ const Welcome = ({ onLogin }) => {
     }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
+    // Validation checks
+    if (!formData.email || !formData.password) {
+      setError('Email and Password are required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (isSignUp && formData.password !== formData.confirm_password) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isSignUp && !validateEmail(formData.email)) {
+      setError('Please enter a valid email');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       let response;
 
+      // Handle SignUp process
       if (isSignUp) {
-        // Validation for required fields
-        if (formData.password !== formData.confirm_password) {
-          setError('Passwords do not match');
-          setIsLoading(false);
-          return;
-        }
-
-        if (!formData.email || !formData.password) {
-          setError('Email and Password are required');
-          setIsLoading(false);
-          return;
-        }
-
-        // API request for sign-up
         response = await axios.post('http://127.0.0.1:8000/api/auth/register/', {
           email: formData.email,
           password: formData.password,
         });
 
-        console.log('Sign-up response:', response.data); // Log the response for debugging
+        console.log('Sign-up response:', response.data);
 
         if (response.data) {
-          // After successful registration, automatically log in
+          // Auto login after sign-up
           const loginResponse = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
             email: formData.email,
             password: formData.password,
           });
 
-          // Store tokens and user info
+          // Store JWT tokens and user data
           localStorage.setItem('jwtToken', loginResponse.data.access);
           localStorage.setItem('refreshToken', loginResponse.data.refresh);
           localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
 
           onLogin(); // Notify App component
-          navigate('/userinfo'); // Redirect to complete profile
+          navigate('/userinfo'); // Redirect to profile setup
         }
       } else {
-        // API request for login
+        // Handle Login process
         response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
           email: formData.email,
           password: formData.password,
         });
 
-        console.log('Login response:', response.data); // Log the response for debugging
-      }
+        console.log('Login response:', response.data);
 
-      // Handle successful login response
-      if (response?.data?.access && response?.data?.refresh && response?.data?.user) {
-        localStorage.setItem('jwtToken', response.data.access);  // Store access token
-        localStorage.setItem('refreshToken', response.data.refresh); // Store refresh token
-        localStorage.setItem('user', JSON.stringify(response.data.user));  // Store user info
+        if (response?.data?.access && response?.data?.refresh && response?.data?.user) {
+          // Store JWT tokens and user info
+          localStorage.setItem('jwtToken', response.data.access);
+          localStorage.setItem('refreshToken', response.data.refresh);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
 
-        onLogin(); // Notify App component about the login
-        navigate('/home'); // Redirect to HomePage after login success
+          onLogin(); // Notify App component
+          navigate('/home'); // Redirect to HomePage after login success
+        }
       }
     } catch (err) {
       console.error('Error during request:', err);
-
-      if (err.response) {
-        let errorMessage = 'An error occurred';
-
-        if (err.response.data) {
-          if (err.response.data.detail) {
-            errorMessage = err.response.data.detail;  
-          } else if (err.response.data.non_field_errors) {
-            errorMessage = err.response.data.non_field_errors[0]; 
-          } else if (err.response.data.email) {
-            errorMessage = 'This email is already registered. Please try another one.';
-          }
-        }
-
-        setError(errorMessage);  
-      } else if (err.request) {
-        setError('Server did not respond');
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+      handleError(err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Error handling
+  const handleError = (err) => {
+    if (err.response) {
+      let errorMessage = 'An error occurred';
+      if (err.response.data) {
+        if (err.response.data.detail) {
+          errorMessage = err.response.data.detail;
+        } else if (err.response.data.non_field_errors) {
+          errorMessage = err.response.data.non_field_errors[0];
+        } else if (err.response.data.email) {
+          errorMessage = 'This email is already registered. Please try another one.';
+        }
+      }
+      setError(errorMessage);
+    } else if (err.request) {
+      setError('Server did not respond');
+    } else {
+      setError('Something went wrong. Please try again.');
+    }
+  };
+
+  // Email validation function
+  const validateEmail = (email) => {
+    const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    return re.test(email);
   };
 
   return (

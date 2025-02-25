@@ -1,9 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [userProfile, setUserProfile] = useState(null); // State for user data
+  const [error, setError] = useState(null); // State to handle any potential errors
+
+  useEffect(() => {
+    try {
+      // Load user data from localStorage or wherever it is stored
+      const profileData = localStorage.getItem('userProfile');
+      if (profileData) {
+        setUserProfile(JSON.parse(profileData)); // Set the user profile in state
+      }
+    } catch (err) {
+      console.error('Error parsing user profile data:', err);
+      setError('Failed to load user profile data');
+    }
+  }, []);
 
   const handleSearch = () => {
     console.log('Searching for:', searchQuery);
@@ -36,6 +51,28 @@ const HomePage = () => {
           Get Started
         </button>
       </div>
+
+      {/* Profile Section */}
+      {userProfile ? (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-12">
+          <h2 className="text-2xl font-semibold mb-4">Your Profile</h2>
+          <p><strong>Name:</strong> {userProfile.name}</p>
+          <p><strong>Investment Experience:</strong> {userProfile.investment_experience}</p>
+          <p><strong>Income Range:</strong> {userProfile.income_range}</p>
+          <p><strong>Risk Tolerance:</strong> {userProfile.risk_tolerance}</p>
+          <p><strong>Investment Type:</strong> {userProfile.investment_type}</p>
+          <p><strong>Investment Reason:</strong> {userProfile.investment_reason}</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-100 p-6 rounded-lg shadow-md mb-12 text-red-800">
+          <h2 className="text-2xl font-semibold mb-4">Error</h2>
+          <p>{error}</p>
+        </div>
+      ) : (
+        <div className="bg-gray-100 p-6 rounded-lg shadow-md mb-12 text-gray-600">
+          <h2 className="text-2xl font-semibold mb-4">Loading Profile...</h2>
+        </div>
+      )}
 
       {/* Search Section */}
       <div className="bg-white p-8 rounded-lg shadow-md mb-12">
